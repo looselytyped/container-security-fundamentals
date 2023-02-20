@@ -1,0 +1,6 @@
+.vagrant/
+revealing-secrets.tar
+revealing-secrets/
+
+# Ignore vscode files
+.vscode
