@@ -14,12 +14,20 @@ ps -C sleep
 # note the PID
 ```
 
+To _really_ understand how containers work, and what kind of security measures need to be put into place, you _need_ to understand that the process running _inside_ the container, and the process running _on the host_ **are the same!**.
+
 ## Exercise: What does a container look like from the host?
 
 ```bash
-#
+# make sure no sleep process is running on your host
+# start a container and execute sleep within it
+# make sure sleep is visible in the containers processes list
+# back on the host spot the sleep process
+
+# compare the PIDs
 ```
 
+**Question**: Why can't you see the same behavior on your Mac or Windows machine?
 
 ## Discussion: Investigating how `cgroups` V1 looks
 
@@ -38,7 +46,9 @@ cd memory;
 ls;
 ```
 
-To find what cgroups _any_ process is a member of:
+The "root" `cgroup` are the settings that apply to all processes in the system.
+
+To find what cgroups _any_ process is a member of, you can look at the `proc` directory, which is a pseudo-filesystem that is created.
 
 ```bash
 # print out the pid
@@ -54,6 +64,9 @@ Notice how the current process is under the _relative_ path to the `cgroup` moun
 Let's see what the `pids` `cgroup` looks like:
 
 ```bash
+# find your curren PID
+echo $$
+# now let's look at how many PIDs are supported
 cd /sys/fs/cgroup/pids;
 ls user.slice/user-1000.slice/session-6.scope;
 # Notice the `tasks` file which lists the processes under this cgroup
@@ -73,6 +86,8 @@ mkdir /sys/fs/cgroup/pids/pid-demo
 ls /sys/fs/cgroup/pids/pid-demo;
 # notice the tasks file is empty
 cat /sys/fs/cgroup/pids/pid-demo/tasks
+# and we still have unlimited PIDs
+cat /sys/fs/cgroup/pids/pid-demo/pids.max
 ```
 
 And now, let's make the current process a part of this new `cgroup`:
@@ -81,7 +96,8 @@ And now, let's make the current process a part of this new `cgroup`:
 echo $$ | tee /sys/fs/cgroup/pids/pid-demo/tasks
 # and make sure it worked
 cat /proc/$$/cgroup;
-# notice the pids cgroup now says :/pid-demo
+# notice the pids cgroup now says :/pid-demo and it's listed under the tasks file for that cgroup
+cat /sys/fs/cgroup/pids/pid-demo/tasks
 ```
 
 Sub-processes under the current process are automatically in the same cgroup as the parent process.
@@ -124,6 +140,11 @@ sudo su
 cgcreate -g cpu:groupA
 cgcreate -g cpu:groupB
 
+# make sure the cgroups got created correctly
+ls /sys/fs/cgroup/cpu
+ls /sys/fs/cgroup/cpu/groupA
+ls /sys/fs/cgroup/cpu/groupB
+
 # cgget can be used to interrogate cgroups (both will be 1024)
 cgget -r cpu.shares groupA
 cgget -r cpu.shares groupB
@@ -141,6 +162,10 @@ cgset -r cpu.shares=256 groupB
 
 # make sure the cgroups constraint the process as you'd expect
 top
+
+# inspect the cgroup
+cgget -r cpu.shares groupA
+cgget -r cpu.shares groupB
 
 # kill all stress-ng processes
 killall stress-ng-cpu
@@ -178,10 +203,20 @@ top
 ### Discussion: How does Docker use cgroups?
 
 ```bash
-# start a container constraining it's MEMORY
+# start a container with no memory limits
+docker container run --rm -d --name demo alpine:3.17 sleep 10000
+# inspect /sys/fs/cgroup/memory/docker <- NOTICE WE ARE UNDER THE MEMORY CGROUP
+ls /sys/fs/cgroup/memory/docker/docker
+# you'll see the name of the container as a nested hierarchy within this folder
+# cat limit_in_bytes
+cat /sys/fs/cgroup/memory/docker/<container-id>/memory.limit_in_bytes
+# stop the containr
+docker container stop demo
+
+# Next, start a container constraining it's MEMORY
 docker container run --rm --memory 100M -d --name demo alpine:3.17 sleep 10000
 # inspect /sys/fs/cgroup/memory/docker <- NOTICE WE ARE UNDER THE MEMORY CGROUP
-ls /sys/fs/cgroup/memory/docker/
+ls /sys/fs/cgroup/memory/docker/docker
 # you'll see the name of the container as a nested hierarchy within this folder
 # cat limit_in_bytes
 cat /sys/fs/cgroup/memory/docker/<container-id>/memory.limit_in_bytes
@@ -190,6 +225,9 @@ cat /sys/fs/cgroup/memory/docker/<container-id>/memory.limit_in_bytes
 docker container exec -it demo sh
 # inside the container the memory is set at the root hierarchy
 cat /sys/fs/cgroup/memory/memory.limit_in_bytes
+
+# outside the container
+docker container stop demo
 ```
 
 ### Exercise: How does Docker use cgroups?
@@ -243,9 +281,13 @@ Namespaces can make it appear to a process that it has it's own copy of an isola
 To isolate namespaces, one Linux system call is `unshare` (there are others like `clone` and `setns`).
 
 ```bash
+# back to V1 VM
 # list all namespaces
 lsns
 ```
+
+These are all the things that a process can _use_.
+Think of namespaces as switches—
 
 ### Discussion: Isolating UNIX Time-sharing System
 
@@ -304,7 +346,7 @@ ip link
 # exit out of it
 
 # BE SURE TO FIRST CTRL-d so you are the vagrant user if you are not already
-# create a process with an isolated network namespace
+# create a process with an isolated user namespace
 # see user details
 id
 exit
@@ -335,6 +377,9 @@ echo "0 1000 1" > /proc/<PID>/uid_map
 id
 # you can now add a network interface
 ip link add type veth
+# list network interfaces again
+ip link
+# WOOT!
 exit
 ```
 
@@ -644,6 +689,63 @@ rm -rf revealing-secrets
 # - see if you can find the layer with the secret file (manifest.json is your friend)
 ```
 
+### Discussion: Using `USER`
+
+Running a container as root, with root in the container:
+
+```bash
+# start a alpine:3.17 container
+docker container run  --rm --name demo alpine:3.17 sleep 1000 &
+# check PID of sleep process within container
+docker container exec demo ps eaf
+# back on the host, notice the process runs as root
+ps aufx | grep sleep
+docker container stop demo
+```
+
+Running a container as root with a non-root user inside the container
+
+```bash
+# start a jenkins/jenkins:lts-jdk11 container
+docker container run --rm --name demo jenkins/jenkins:lts-jdk11 sleep 1000 &
+# list id of user inside container
+docker container exec demo id
+# notice the ID
+# outside on the host — notice how it says "vagrant"
+ps aufx | grep sleep
+# why is that?
+docker container stop demo
+```
+
+Finally, running a container as a non-root user with that user mapped inside the container.
+This is what happens when you use the `USER` instruction in a `Dockerfile`.
+
+```bash
+# as root
+adduser raju
+# add that user to the docker group
+sudo usermod -aG docker raju
+# switch to that user
+su raju
+# start a container with a user mapping
+docker run -d --rm --user ${UID}:${UID} --name demo alpine:3.17 sleep 1000
+# inside the container process still runs as root
+docker container exec demo ps
+# but outside it's running under the specific user
+ps aufx | grep sleep
+```
+
+### Exercise: Using `USER`
+
+```bash
+# add a new user
+# add the new user to the docker group
+# switch to that user
+# start a container with a user mapping
+# list processes inside the container to see the id of the user owning the main process
+# list processes outside and make sure that it looks good
+```
+
 ## Exercise: Multi-stage Dockerfiles
 
 - Explore the `Dockerfile` in `multi-stage-build-demo`
@@ -691,7 +793,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 ### Discussion: "docker from docker"
 
 ```bash
-# on your workstation or in the VM
+# on your workstation or use upV2
 docker container ls
 # launch a container with the docker socket mounted
 docker run --rm -it --name d-from-d -v /var/run/docker.sock:/var/run/docker.sock ubuntu:22.04
