@@ -3,6 +3,11 @@
 ## Discussion: What does a container look like from the host?
 
 ```bash
+# Start a Ubuntu 2010 VM with
+VAGRANT_VAGRANTFILE=Vagrantfile.Ubuntu-2010 vagrant up
+```
+
+```bash
 # on the host make sure no sleep process is running
 ps -C sleep
 # start a alpine:3.17 container
@@ -32,11 +37,6 @@ To _really_ understand how containers work, and what kind of security measures n
 ## Discussion: Investigating how `cgroups` V1 looks
 
 Looking around the `cgroups` filesystem.
-
-```bash
-# Start a Ubuntu 2010 VM with
-VAGRANT_VAGRANTFILE=Vagrantfile.Ubuntu-2010 vagrant up
-```
 
 ```bash
 sudo su;
@@ -397,9 +397,9 @@ There was no process escalation here!
    │             │      ┌────────────────────────────────┐
    │ ...         │      │   C H I L D    P R O C E S S   │
    │             │      ├────────────────────────────────┤
-   │ 1000 ───────┼──────┼─► 1                            │
+   │ 1000 ───────┼──────┼─► 0                            │
    │             │      │                                │
-   │ 1001        │      │   2                            │
+   │ 1001        │      │   1                            │
    │             │      │                                │
    └─────────────┘      └────────────────────────────────┘
 ```
@@ -695,7 +695,7 @@ Running a container as root, with root in the container:
 
 ```bash
 # start a alpine:3.17 container
-docker container run  --rm --name demo alpine:3.17 sleep 1000 &
+docker container run  --rm --name demo -d alpine:3.17 sleep 1000 &
 # check PID of sleep process within container
 docker container exec demo ps eaf
 # back on the host, notice the process runs as root
