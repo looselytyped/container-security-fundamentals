@@ -242,6 +242,26 @@ docker container run --rm --cpu-shares 512 -d --name demo alpine:3.17 sleep 1000
 # use docker container exec -it demo sh and look for cpu/cpu.shares at the root hierarchy
 ```
 
+**Note**: You too can modify the `cgroups` for any container using `docker container update`.
+See what `docker container update --help` has to offer.
+
+## Discussion: Look inside the VM that Docker runs on Windows/Mac
+
+Linux runs containers natively.
+However, on Windows and Mac, Docker uses a local VM to run the Docker daemon.
+You can inspect the `cgroups` _inside_ this VM by using an advanced technique
+
+```bash
+docker container run --rm -it --privileged --pid=host debian nsenter -t 1 -m -u -n -i sh
+
+# inside the container
+cat /etc/os-release
+
+```
+
+This uses `nsenter` which allows you to enter a Linux namespace (in this case )
+
+
 ## Discussion: Investigating how `cgroups` V2 looks
 
 The biggest difference is that in `cgroups` `v2` you can't have a process join `memory/group1` and `cpu,cpuacct/group2`.
