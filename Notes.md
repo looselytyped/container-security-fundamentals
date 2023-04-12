@@ -11,7 +11,7 @@ VAGRANT_VAGRANTFILE=Vagrantfile.Ubuntu-2010 vagrant up
 # on the host make sure no sleep process is running
 ps -C sleep
 # start a alpine:3.17 container
-docker container run  --rm --name demo alpine:3.17 sleep 1000 &
+docker container run --rm --name demo -d alpine:3.17 sleep 1000 &
 # check PID of sleep process within container
 docker container exec demo ps eaf
 # back on the host, do you now see a sleep process?
@@ -24,12 +24,12 @@ To _really_ understand how containers work, and what kind of security measures n
 ## Exercise: What does a container look like from the host?
 
 ```bash
-# make sure no sleep process is running on your host
-# start a container and execute sleep within it
-# make sure sleep is visible in the containers processes list
-# back on the host spot the sleep process
+# [ ] make sure no sleep process is running in your VM (or host if you are running Linux)
+# [ ] start a container and execute sleep within it
+# [ ] make sure sleep is visible in the containers processes list
+# [ ] back on the host spot the sleep process
 
-# compare the PIDs
+# [ ] compare the PIDs
 ```
 
 **Question**: Why can't you see the same behavior on your Mac or Windows machine?
@@ -64,7 +64,7 @@ Notice how the current process is under the _relative_ path to the `cgroup` moun
 Let's see what the `pids` `cgroup` looks like:
 
 ```bash
-# find your curren PID
+# find your current PID
 echo $$
 # now let's look at how many PIDs are supported
 cd /sys/fs/cgroup/pids;
@@ -175,28 +175,28 @@ killall stress-ng-cpu
 
 ```bash
 sudo su
-# start a process that is a member of the exercise cgroup and stresses the memory
+# [ ] start a process that is a member of the exercise cgroup and stresses the memory
 stress-ng --vm 1 --vm-bytes 75% --vm-method all --verify &
-# see if its running. GRAB the PID!!!
+# [ ] see if its running. GRAB the PID!!!
 top;
-# kill it
+# [ ] kill it
 kill <PID>
 
-# let's create a cgroup to constrain the memory
+# [ ] create a cgroup to constrain the memory
 cgcreate -g memory:exercise
-# see what the max memory limit (this is all the memory on the VM)
+# [ ] see what the max memory limit (this is all the memory on the VM)
 cgget -r memory.limit_in_bytes exercise
-# now constrain the memory using cgset
+# [ ] now constrain the memory using cgset
 cgset -r memory.limit_in_bytes=500000 exercise
 cgset -r memory.swappiness=0 exercise
-# check to see if it stuck
+# [ ] check to see if it stuck
 cgget -r memory.limit_in_bytes exercise
 cgget -r memory.swappiness exercise
 
-# start the stressor again
+# [ ] start the stressor again
 cgexec -g memory:exercise stress-ng  --vm 1 --vm-bytes 75% --vm-method all --verify &
 
-# do you see it in top?
+# [ ] do you see it in top? If not, why not? Pay attention to what you set to memory.limit_in_bytes
 top
 ```
 
@@ -233,12 +233,12 @@ docker container stop demo
 ### Exercise: How does Docker use cgroups?
 
 ```bash
-# start a container constraining CPU SHARES
+# [ ] start a container constraining CPU SHARES
 docker container run --rm --cpu-shares 512 -d --name demo alpine:3.17 sleep 10000
-# Can you figure out where to go looking for the correct cgroup?
+# [ ] Can you figure out where to go looking for the correct cgroup?
 # HINT: You are constraining the cpu so look for that cgroup under /sys/fs/cgroup
 
-# What does it look like from inside the container?
+# [ ] What does it look like from inside the container?
 # use docker container exec -it demo sh and look for cpu/cpu.shares at the root hierarchy
 ```
 
@@ -288,9 +288,9 @@ cat memory.max
 ```bash
 sudo su
 docker container run --rm --memory 100M -d alpine:3.17 sleep 10000
-# find the controller
+# [ ] find the controller
 find . -name "*docker*"
-# look inside the system.slice/docker-<container-id>
+# [ ] look inside the system.slice/docker-<container-id>
 cat memory.max
 ```
 
@@ -360,14 +360,14 @@ exit
 ```bash
 # on the host list interfaces
 ip link
-# create a process with an isolated network namespace
-# see what this offers
+# [ ] create a process with an isolated network namespace
+# [ ] see what the following has to offer
 ip link
 # exit out of it
 
 # BE SURE TO FIRST CTRL-d so you are the vagrant user if you are not already
-# create a process with an isolated user namespace
-# see user details
+# [ ] create a process with an isolated user namespace
+# [ ] see user details using the following
 id
 exit
 ```
@@ -403,7 +403,7 @@ ip link
 exit
 ```
 
-There was no process escalation here!
+There was no privilege escalation here!
 `0 1000 1` means that UID `0` in the child process is mapped to UID `1000` on the host (and we are adding just one UID).
 
 ```asciiflow
@@ -427,22 +427,22 @@ There was no process escalation here!
 ### Exercise: Mapping users
 
 ```bash
-# BE SURE TO BE THE VAGRANT USER
+# [ ] BE SURE TO BE THE VAGRANT USER
 ip link
 id
-# create a process with it's own network and user namespace
-# check network interfaces and user/group ID
+# [ ] create a process with it's own network and user namespace
+# [ ] check network interfaces and user/group ID
 ip link
 id
-# see if you can now add a network interface
+# [ ] see if you can now add a network interface
 ip link add type veth
-# fix this by mapping the current user in the current process to 0 under /proc/<PID>/uid_map IN ANOTHER TERMINAL WHERE YOU ARE ROOT!
+# [ ] fix this by mapping the current user in the current process to 0 under /proc/<PID>/uid_map IN ANOTHER TERMINAL WHERE YOU ARE ROOT!
 
-# did it work?
+# [ ] did it work?
 id
-# then try adding a new interface again
+# [ ] then try adding a new interface again
 ip link add type veth
-# list it
+# [ ] list it
 ip link
 ```
 
@@ -504,11 +504,11 @@ exit
 ### Exercise: Isolating PIDs
 
 ```bash
-# start a new process with an isolated PID namespace
-# be sure to "fork" it
+# [ ] start a new process with an isolated PID namespace
+# [ ] be sure to "fork" it
 
-# list processes using ps -eaf
-# exit out of it
+# [ ] list processes using ps -eaf
+# [ ] exit out of it
 ```
 
 The issue here is that `ps` is reading `/proc`, on the host.
@@ -586,16 +586,16 @@ exit
 ## Exercise: `chroot`
 
 ```bash
-# as root!
-# go to some directory, say home
-# make an alpine directory and cd into it
-# get the alpine fs
+# AS ROOT!
+# [ ] go to some directory, say home
+# [ ] make an alpine directory and cd into it
+# [ ] get the alpine fs
 curl -o alpine.tar.gz http://dl-cdn.alpinelinux.org/alpine/v3.17/releases/x86_64/alpine-minirootfs-3.17.0-x86_64.tar.gz
 tar xvf alpine.tar.gz
 rm alpine.tar.gz
-# use the snippet above to start a `sh` process
-# - with it's own PID namespace
-# - chroot-ing the current directory as it's root directory
+# [ ] use the snippet above to start a `sh` process
+# - [ ] with it's own PID namespace
+# - [ ] chroot-ing the current directory as it's root directory
 # don't forget to mount the proc directory
 ```
 
