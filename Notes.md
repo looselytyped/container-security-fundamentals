@@ -210,7 +210,7 @@ ls /sys/fs/cgroup/memory/docker/docker
 # you'll see the name of the container as a nested hierarchy within this folder
 # cat limit_in_bytes
 cat /sys/fs/cgroup/memory/docker/<container-id>/memory.limit_in_bytes
-# stop the containr
+# stop the container
 docker container stop demo
 
 # Next, start a container constraining it's MEMORY
