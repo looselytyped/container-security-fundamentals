@@ -14,19 +14,30 @@ COPY app/ app/
 RUN ["./gradlew", "-q", "--no-daemon", "jar"]
 
 # ——— Build JRE ————————————————————————————————————————————————
-# From https://careers.wolt.com/en/blog/tech/how-to-reduce-jvm-docker-image-size
+# From https://jaehong21.com/posts/java/java-jdeps-jlink/
 FROM amazoncorretto:19-alpine3.17 as jre-builder
 
+# needed for jlink
 RUN apk add --no-cache binutils
+
+COPY --from=code-builder /code/app/build/libs/app.jar /app.jar
+
+# Dependency analysis
+RUN $JAVA_HOME/bin/jdeps \
+  --ignore-missing-deps \
+  --print-module-deps \
+  -q --recursive \
+  --multi-release 17 \
+  /app.jar > /deps.info
+
 # Build small JRE image
 RUN $JAVA_HOME/bin/jlink \
-         --verbose \
-         --add-modules ALL-MODULE-PATH \
-         --strip-debug \
-         --no-man-pages \
-         --no-header-files \
-         --compress=2 \
-         --output /customjre
+  --verbose \
+  --add-modules $(cat /deps.info) \
+  --strip-debug \
+  --no-man-pages --no-header-files \
+  --compress=2 \
+  --output /customjre
 
 # ——— Final production image ————————————————————————————————————————————————
 FROM alpine:3.17
