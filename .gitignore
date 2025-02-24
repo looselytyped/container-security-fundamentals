@@ -4,3 +4,4 @@ revealing-secrets/
 
 # Ignore vscode files
 .vscode
+Dockerfile.sample

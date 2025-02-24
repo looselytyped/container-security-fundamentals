@@ -11,7 +11,7 @@ VAGRANT_VAGRANTFILE=Vagrantfile.Ubuntu-2010 vagrant up
 # on the host make sure no sleep process is running
 ps -C sleep
 # start a alpine:3.17 container
-docker container run --rm --name demo -d alpine:3.17 sleep 1000 &
+docker container run --rm --name demo -d alpine:3.17 sleep 1000
 # check PID of sleep process within container
 docker container exec demo ps eaf
 # back on the host, do you now see a sleep process?
@@ -715,7 +715,7 @@ Running a container as root, with root in the container:
 
 ```bash
 # start a alpine:3.17 container
-docker container run  --rm --name demo -d alpine:3.17 sleep 1000 &
+docker container run --rm --name demo -d alpine:3.17 sleep 1000
 # check PID of sleep process within container
 docker container exec demo ps eaf
 # back on the host, notice the process runs as root
@@ -727,7 +727,7 @@ Running a container as root with a non-root user inside the container
 
 ```bash
 # start a jenkins/jenkins:lts-jdk11 container
-docker container run --rm --name demo jenkins/jenkins:lts-jdk11 sleep 1000 &
+docker container run --rm --name demo jenkins/jenkins:lts-jdk11 sleep 1000
 # list id of user inside container
 docker container exec demo id
 # notice the ID
@@ -748,7 +748,7 @@ sudo usermod -aG docker raju
 # switch to that user
 su raju
 # start a container with a user mapping
-docker run -d --rm --user ${UID}:${UID} --name demo alpine:3.17 sleep 1000
+docker container run --rm --name demo -d --user ${UID}:${UID} alpine:3.17 sleep 1000
 # inside the container process still runs as root
 docker container exec demo ps
 # but outside it's running under the specific user
@@ -784,10 +784,10 @@ docker container run --rm -i hadolint/hadolint < Jenkins-Dockerfile
 ### Discussion: Using an image scanner
 
 ```bash
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-                -v $HOME/Library/Caches:/root/.cache/ \
-                aquasec/trivy:latest \
-                image python:3.4-alpine
+docker container run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                          -v $HOME/Library/Caches:/root/.cache/ \
+                          aquasec/trivy:latest \
+                          image python:3.4-alpine
 ```
 
 ### Exercise: Using a linter & image scanner
@@ -816,7 +816,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 # on your workstation or use upV2
 docker container ls
 # launch a container with the docker socket mounted
-docker run --rm -it --name d-from-d -v /var/run/docker.sock:/var/run/docker.sock ubuntu:22.04
+docker container run --rm -it --name d-from-d -v /var/run/docker.sock:/var/run/docker.sock ubuntu:22.04
 # install docker in the container
 apt update && apt install -y docker.io
 # list containers — notice d-from-d is listed!
