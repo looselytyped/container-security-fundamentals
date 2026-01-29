@@ -206,7 +206,7 @@ top
 # start a container with no memory limits
 docker container run --rm -d --name demo alpine:3.17 sleep 10000
 # inspect /sys/fs/cgroup/memory/docker <- NOTICE WE ARE UNDER THE MEMORY CGROUP
-ls /sys/fs/cgroup/memory/docker/docker
+ls /sys/fs/cgroup/memory/docker
 # you'll see the name of the container as a nested hierarchy within this folder
 # cat limit_in_bytes
 cat /sys/fs/cgroup/memory/docker/<container-id>/memory.limit_in_bytes
@@ -216,7 +216,7 @@ docker container stop demo
 # Next, start a container constraining it's MEMORY
 docker container run --rm --memory 100M -d --name demo alpine:3.17 sleep 10000
 # inspect /sys/fs/cgroup/memory/docker <- NOTICE WE ARE UNDER THE MEMORY CGROUP
-ls /sys/fs/cgroup/memory/docker/docker
+ls /sys/fs/cgroup/memory/docker
 # you'll see the name of the container as a nested hierarchy within this folder
 # cat limit_in_bytes
 cat /sys/fs/cgroup/memory/docker/<container-id>/memory.limit_in_bytes
@@ -727,7 +727,7 @@ Running a container as root with a non-root user inside the container
 
 ```bash
 # start a jenkins/jenkins:lts-jdk11 container
-docker container run --rm --name demo jenkins/jenkins:lts-jdk11 sleep 1000
+docker container run --rm --name demo -d jenkins/jenkins:lts-jdk11 sleep 1000
 # list id of user inside container
 docker container exec demo id
 # notice the ID
