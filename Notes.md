@@ -10,8 +10,8 @@ VAGRANT_VAGRANTFILE=Vagrantfile.Ubuntu-2010 vagrant up
 ```bash
 # on the host make sure no sleep process is running
 ps -C sleep
-# start a alpine:3.17 container
-docker container run --rm --name demo -d alpine:3.17 sleep 1000
+# start a alpine:3.23 container
+docker container run --rm --name demo -d alpine:3.23 sleep 1000
 # check PID of sleep process within container
 docker container exec demo ps eaf
 # back on the host, do you now see a sleep process?
@@ -204,7 +204,7 @@ top
 
 ```bash
 # start a container with no memory limits
-docker container run --rm -d --name demo alpine:3.17 sleep 10000
+docker container run --rm -d --name demo alpine:3.23 sleep 10000
 # inspect /sys/fs/cgroup/memory/docker <- NOTICE WE ARE UNDER THE MEMORY CGROUP
 ls /sys/fs/cgroup/memory/docker
 # you'll see the name of the container as a nested hierarchy within this folder
@@ -214,7 +214,7 @@ cat /sys/fs/cgroup/memory/docker/<container-id>/memory.limit_in_bytes
 docker container stop demo
 
 # Next, start a container constraining it's MEMORY
-docker container run --rm --memory 100M -d --name demo alpine:3.17 sleep 10000
+docker container run --rm --memory 100M -d --name demo alpine:3.23 sleep 10000
 # inspect /sys/fs/cgroup/memory/docker <- NOTICE WE ARE UNDER THE MEMORY CGROUP
 ls /sys/fs/cgroup/memory/docker
 # you'll see the name of the container as a nested hierarchy within this folder
@@ -234,7 +234,7 @@ docker container stop demo
 
 ```bash
 # [ ] start a container constraining CPU SHARES
-docker container run --rm --cpu-shares 512 -d --name demo alpine:3.17 sleep 10000
+docker container run --rm --cpu-shares 512 -d --name demo alpine:3.23 sleep 10000
 # [ ] Can you figure out where to go looking for the correct cgroup?
 # HINT: You are constraining the cpu so look for that cgroup under /sys/fs/cgroup
 
@@ -276,7 +276,7 @@ vagrant up
 
 ```bash
 sudo su
-docker container run --rm --memory 100M -d alpine:3.17 sleep 10000
+docker container run --rm --memory 100M -d alpine:3.23 sleep 10000
 # find the controller on the host
 find . -name "*docker*"
 # look inside the system.slice/docker-<container-id>
@@ -287,7 +287,7 @@ cat memory.max
 
 ```bash
 sudo su
-docker container run --rm --memory 100M -d alpine:3.17 sleep 10000
+docker container run --rm --memory 100M -d alpine:3.23 sleep 10000
 # [ ] find the controller
 find . -name "*docker*"
 # [ ] look inside the system.slice/docker-<container-id>
@@ -313,7 +313,7 @@ Think of namespaces as switches—
 
 ```bash
 # docker containers have their own hostname
-docker container run --rm --name demo alpine:3.17 hostname
+docker container run --rm --name demo alpine:3.23 hostname
 
 # so how does this work?
 # as root
@@ -469,7 +469,7 @@ cat /proc/<PID>/gid_map
 # list processes on the host
 ps -eaf
 # a container only sees the processes running inside the container
-docker container run --rm --name demo alpine:3.17 ps -eaf
+docker container run --rm --name demo alpine:3.23 ps -eaf
 ```
 
 Can we replicate this?
@@ -523,7 +523,7 @@ cd
 # from within a container you only see the containers filesystem
 ls
 # a container only sees the processes running inside the container
-docker container run --rm --name demo alpine:3.17 ls
+docker container run --rm --name demo alpine:3.23 ls
 # lists the alpine fs
 ```
 
@@ -714,8 +714,8 @@ rm -rf revealing-secrets
 Running a container as root, with root in the container:
 
 ```bash
-# start a alpine:3.17 container
-docker container run --rm --name demo -d alpine:3.17 sleep 1000
+# start a alpine:3.23 container
+docker container run --rm --name demo -d alpine:3.23 sleep 1000
 # check PID of sleep process within container
 docker container exec demo ps eaf
 # back on the host, notice the process runs as root
@@ -748,7 +748,7 @@ sudo usermod -aG docker raju
 # switch to that user
 su raju
 # start a container with a user mapping
-docker container run --rm --name demo -d --user ${UID}:${UID} alpine:3.17 sleep 1000
+docker container run --rm --name demo -d --user ${UID}:${UID} alpine:3.23 sleep 1000
 # inside the container process still runs as root
 docker container exec demo ps
 # but outside it's running under the specific user

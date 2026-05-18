@@ -40,7 +40,7 @@ RUN $JAVA_HOME/bin/jlink \
   --output /customjre
 
 # ——— Final production image ————————————————————————————————————————————————
-FROM alpine:3.17
+FROM alpine:3.23
 
 ENV JAVA_HOME=/jre
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
